@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import os
+import sys
+import traceback
+
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+
+from keras.layers import Dropout, Dense, LSTM
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.models import Sequential
+
+# from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import GridSearchCV
+
+# Optional
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+# These are the paths to where SageMaker mounts interesting things in your
+# container.
+prefix = '/opt/ml/'
+
+input_path = prefix + 'input/data/training/churn.csv'
+output_path = os.path.join(prefix, 'output')
+model_path = os.path.join(prefix, 'model')
+
+def data_process():
+    data = [[i for i in range(100)]]
+    data = np.array(data, dtype = float)
+    target = [[i for i in range(1,101)]]
+    target = np.array(target, dtype = float)
+
+    data = data.reshape((1, 1, 100))
+    target = target.reshape((1, 1, 100))
+    
+    x_test = [[i for i in range(100, 200)]]
+    x_test = np.array(x_test).reshape((1, 1, 100))
+    y_test = [[i for i in range(101, 201)]]
+    y_test = np.array(y_test).reshape((1, 1, 100))
+
+    return data, target, x_test, y_test
+
+def generate_model(data, target, x_test, y_test):
+    model = Sequential()
+    model.add(LSTM(100, input_shape = (1, 100), return_sequences = True))
+    model.add(Dense(100))
+    model.compile(loss='mean_absolute_error', optimizer ='adam', metrics = ['accuracy'])
+    m = model.fit(data, target, epochs=10000, batch_size = 1, verbose=1, validation_data = (x_test,y_test))
+    return m
+
+def train():
+    print('Starting the training.')
+    try:
+        data, target, x_test, y_test = data_process()
+        m = generate_model(data, target, x_test, y_test)
+        m.model.save(os.path.join(model_path, 'lstm.h5'))
+        print('Training is complete.')
+    except Exception as e:
+        # Write out an error file. This will be returned as the failure
+        # Reason in the DescribeTrainingJob result.
+        trc = traceback.format_exc()
+        with open(os.path.join(output_path, 'failure'), 'w') as s:
+            s.write('Exception during training: ' + str(e) + '\n' + trc)
+        # Printing this causes the exception to be in the training job logs
+        print(
+            'Exception during training: ' + str(e) + '\n' + trc,
+            file=sys.stderr)
+        sys.exit(255)
+
+
+if __name__ == '__main__':
+    train()
+    sys.exit(0)

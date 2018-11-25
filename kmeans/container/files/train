@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import os
+import sys
+import traceback
+
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+
+# from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import GridSearchCV
+from sklearn.cluster import KMeans
+
+import pickle
+
+# Optional
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+# These are the paths to where SageMaker mounts interesting things in your
+# container.
+prefix = '/opt/ml/'
+
+input_path = prefix + 'input/data/training/kmeans_input.csv'
+output_path = os.path.join(prefix, 'output')
+model_path = os.path.join(prefix, 'model')
+
+def data_process(df):
+    X = df.values
+    return X
+
+def generate_model(X):
+    m = KMeans(n_clusters=2).fit(X)
+    return m
+
+def train():
+    print('Starting the training.')
+    try:
+        df = pd.read_csv(input_path)
+        X = data_process(df)
+        m = generate_model(X)
+        pickle.dump(m, open(os.path.join(model_path, 'kmeans.sav'), 'wb'), protocol=2)
+        print('Training is complete.')
+    except Exception as e:
+        # Write out an error file. This will be returned as the failure
+        # Reason in the DescribeTrainingJob result.
+        trc = traceback.format_exc()
+        with open(os.path.join(output_path, 'failure'), 'w') as s:
+            s.write('Exception during training: ' + str(e) + '\n' + trc)
+        # Printing this causes the exception to be in the training job logs
+        print(
+            'Exception during training: ' + str(e) + '\n' + trc,
+            file=sys.stderr)
+        sys.exit(255)
+
+
+if __name__ == '__main__':
+    train()
+    sys.exit(0)
