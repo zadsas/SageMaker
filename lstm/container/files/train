@@ -25,7 +25,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # container.
 prefix = '/opt/ml/'
 
-input_path = prefix + 'input/data/training/churn.csv'
+input_path = prefix + 'input/data/training/lstm_input.csv'
 output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model')
 
