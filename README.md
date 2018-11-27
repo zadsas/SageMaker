@@ -7,3 +7,5 @@
     └── run36.ipynb     # Jypter notebook to train and serve the model via SageMaker. Written in Python 3.6.
 
 The IAM role attached to the Jupyter instance must allow interaction with S3 and ECR.
+
+Based on https://medium.com/@richardchen_81235/custom-keras-model-in-sagemaker-277a2831ac67
